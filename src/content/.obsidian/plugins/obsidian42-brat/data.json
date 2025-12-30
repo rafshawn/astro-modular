@@ -1,5 +1,8 @@
 {
   "pluginList": [
+    "davidvkimball/obsidian-explorer-focus",
+    "pjeby/hot-reload",
+    "mProjectsCode/obsidian-theme-hot-reload-plugin",
     "davidvkimball/obsidian-ui-tweaker",
     "davidvkimball/obsidian-vault-cms",
     "davidvkimball/obsidian-bases-cms",
@@ -12,6 +15,18 @@
     "davidvkimball/obsidian-astro-composer"
   ],
   "pluginSubListFrozenVersion": [
+    {
+      "repo": "davidvkimball/obsidian-explorer-focus",
+      "version": "latest"
+    },
+    {
+      "repo": "pjeby/hot-reload",
+      "version": "0.3.0"
+    },
+    {
+      "repo": "mProjectsCode/obsidian-theme-hot-reload-plugin",
+      "version": "0.0.4"
+    },
     {
       "repo": "davidvkimball/obsidian-ui-tweaker",
       "version": "latest"
@@ -56,7 +71,7 @@
   "themesList": [
     {
       "repo": "davidvkimball/obsidian-oxygen",
-      "lastUpdate": "23994585"
+      "lastUpdate": "23974889"
     }
   ],
   "updateAtStartup": true,

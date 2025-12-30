@@ -65,6 +65,8 @@ views:
     imageAspectRatio: 0.55
     maxTagsToShow: 2
     dateIncludeTime: false
+    fallbackToContent: true
+    draftStatusReverse: false
   - type: bases-cms
     name: Pages
     filters:

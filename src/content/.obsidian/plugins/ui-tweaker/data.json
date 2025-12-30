@@ -21,7 +21,7 @@
   "newTabIcon": "show",
   "tabCloseButton": "show",
   "statusBar": false,
-  "scrollBars": false,
+  "scrollBars": "show",
   "leftSidebarToggleButton": "show",
   "rightSidebarToggleButton": "show",
   "tooltips": false,
