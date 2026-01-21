@@ -18,19 +18,19 @@ const shouldShowTOC = filteredHeadings.length > 1;
 
 {shouldShowTOC && (
   <nav class="toc-nav toc-container p-4 pr-5 bg-white dark:bg-primary-900 rounded-xl border border-primary-200 dark:border-primary-700 shadow-lg backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95" data-max-depth={maxDepth}>
+    <button
+      class="toc-toggle w-full font-semibold text-primary-900 dark:text-primary-50 mb-3 flex items-center justify-between text-sm hover:text-highlight-600 dark:hover:text-highlight-400 transition-colors"
+      aria-expanded="true"
+      aria-controls="toc-list"
+    >
+      <div class="flex items-center">
+        <Icon name="list" class="w-4 h-4 mr-2" />
+        Contents
+      </div>
+      <Icon name="chevron-down" class="w-4 h-4 toc-chevron transition-transform duration-200" />
+    </button>
+
     <div class="toc-content">
-      <button 
-        class="toc-toggle w-full font-semibold text-primary-900 dark:text-primary-50 mb-3 flex items-center justify-between text-sm hover:text-highlight-600 dark:hover:text-highlight-400 transition-colors"
-        aria-expanded="true"
-        aria-controls="toc-list"
-      >
-        <div class="flex items-center">
-          <Icon name="list" class="w-4 h-4 mr-2" />
-          Contents
-        </div>
-        <Icon name="chevron-down" class="w-4 h-4 toc-chevron transition-transform duration-200" />
-      </button>
-      
       <ul class="space-y-2 toc-list" id="toc-list">
         {filteredHeadings.map(heading => (
           <li class={`toc-item toc-level-${heading.depth}`}>
@@ -52,26 +52,23 @@ const shouldShowTOC = filteredHeadings.length > 1;
   // Constants for TOC height calculation
   const BOTTOM_SPACING = 96; // 6rem = 96px - fixed spacing from bottom of viewport
   const MIN_TOC_HEIGHT = 200; // Minimum height for TOC list to be useful
-  
-  // Global function to calculate and set TOC max height
+
+  // Global variable to store tocContent reference
+  let tocContent: HTMLElement | null = null;
+
+  // Simplified height management - just ensure scrolling works
   function updateTOCHeight() {
+    if (!tocContent) return;
+
+    // Set a reasonable max height using viewport units - no dynamic calculation
+    tocContent.style.maxHeight = '60vh'; // 60% of viewport height
+    tocContent.style.overflowY = 'auto';
+
+    // Remove max-height from the list since the content container now handles scrolling
     const tocList = document.querySelector('.toc-list') as HTMLElement;
-    const tocContainer = document.querySelector('.toc-container') as HTMLElement;
-    
-    if (!tocList || !tocContainer) return;
-    
-    // Get the TOC container's position relative to viewport
-    const rect = tocContainer.getBoundingClientRect();
-    const tocTop = rect.top;
-    
-    // Calculate available space: viewport height - TOC top position - bottom spacing
-    const availableHeight = window.innerHeight - tocTop - BOTTOM_SPACING;
-    
-    // Ensure minimum height
-    const maxHeight = Math.max(availableHeight, MIN_TOC_HEIGHT);
-    
-    // Apply the calculated max-height
-    tocList.style.maxHeight = `${maxHeight}px`;
+    if (tocList) {
+      tocList.style.maxHeight = 'none';
+    }
   }
   
   // Debounce function for performance
@@ -89,11 +86,14 @@ const shouldShowTOC = filteredHeadings.length > 1;
   
   // Store scroll listener reference for cleanup
   let scrollListener: (() => void) | null = null;
+  // Track last scroll time to avoid excessive highlighting updates
+  let lastScrollTime = Date.now();
   
   // Global function to initialize table of contents
   function initializeTableOfContents() {
     const tocLinks = document.querySelectorAll('.toc-link');
     const tocContainer = document.querySelector('.toc-container') as HTMLElement;
+    tocContent = document.querySelector('.toc-content') as HTMLElement;
     
     // Get maxDepth from data attribute
     const maxDepth = tocContainer ? parseInt(tocContainer.dataset.maxDepth || '6', 10) : 6;
@@ -129,10 +129,10 @@ const shouldShowTOC = filteredHeadings.length > 1;
     const tocToggle = document.querySelector('.toc-toggle') as HTMLButtonElement;
     const tocList = document.querySelector('.toc-list') as HTMLElement;
     const tocChevron = document.querySelector('.toc-chevron') as HTMLElement;
-    
+
     if (!tocLinks.length || !headings || headings.length === 0) return;
-    
-    // Calculate initial TOC height
+
+    // Calculate initial TOC height immediately
     updateTOCHeight();
     
     // Remove existing event listeners to prevent duplicates
@@ -161,6 +161,8 @@ const shouldShowTOC = filteredHeadings.length > 1;
           freshTocList.style.display = 'block';
           freshTocToggle.setAttribute('aria-expanded', 'true');
           freshTocChevron.style.transform = 'rotate(0deg)';
+          // Recalculate height on expand
+          updateTOCHeight();
         }
       });
     }
@@ -168,32 +170,42 @@ const shouldShowTOC = filteredHeadings.length > 1;
     // Highlight active section in TOC
     function highlightTOC() {
       if (!headings || headings.length === 0) return;
-      
+
       let current = '';
-      const scrollPosition = window.scrollY;
-      const viewportTop = 150; // Account for sticky header (96px) + buffer
-      
-      // Find the current active heading
-      // Start from the bottom and work up to find the last heading that's above the viewport threshold
+      const viewportTop = 120; // Threshold for active headings (accounts for header)
       const headingsArray = Array.from(headings);
-      for (let i = headingsArray.length - 1; i >= 0; i--) {
-        const heading = headingsArray[i];
+
+      // Find the heading that should be highlighted
+      // Priority: 1) Heading closest to viewport top, 2) Last heading above viewport, 3) First heading
+      let closestHeading = null;
+      let closestDistance = Infinity;
+      let lastHeadingAboveViewport = null;
+
+      for (const heading of headingsArray) {
         const rect = heading.getBoundingClientRect();
-        const headingTop = rect.top + scrollPosition - viewportTop;
-        
-        if (scrollPosition >= headingTop) {
-          current = heading.id;
-          break;
+
+        // Track the closest heading to viewport top
+        const distance = Math.abs(rect.top - viewportTop);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestHeading = heading;
+        }
+
+        // Track the last heading that is above the viewport threshold
+        if (rect.top <= viewportTop) {
+          lastHeadingAboveViewport = heading;
         }
       }
-      
-      // If no heading is active yet (page top), activate the first one
-      if (!current && headingsArray.length > 0) {
-        const firstHeading = headingsArray[0];
-        const firstRect = firstHeading.getBoundingClientRect();
-        if (firstRect.top <= viewportTop + 100) {
-          current = firstHeading.id;
-        }
+
+      // Use the heading above viewport if available, otherwise closest heading
+      if (lastHeadingAboveViewport) {
+        current = lastHeadingAboveViewport.id;
+      } else if (closestHeading && closestDistance <= 200) {
+        // Only use closest if it's reasonably close
+        current = closestHeading.id;
+      } else {
+        // Fallback to first heading
+        current = headingsArray[0]?.id || '';
       }
       
       // Update TOC links
@@ -201,16 +213,19 @@ const shouldShowTOC = filteredHeadings.length > 1;
         const href = link.getAttribute('href')?.slice(1);
         if (href === current) {
           link.classList.add('active');
-          
-          // Auto-scroll TOC to keep active item visible
-          if (tocList) {
+
+          // Auto-scroll TOC to keep active item visible (less aggressive)
+          // Only do this if we haven't scrolled the page recently to avoid conflicts
+          const timeSinceLastScroll = Date.now() - lastScrollTime;
+          if (tocContent && tocContent.scrollHeight > tocContent.clientHeight && timeSinceLastScroll > 500) {
             const linkRect = link.getBoundingClientRect();
-            const listRect = tocList.getBoundingClientRect();
-            
-            // Check if link is outside visible area of TOC
-            if (linkRect.top < listRect.top || linkRect.bottom > listRect.bottom) {
-              // Scroll the active link into view (centered if possible)
-              link.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const contentRect = tocContent.getBoundingClientRect();
+
+            // Only scroll if link is significantly outside visible area
+            const scrollThreshold = 30; // pixels
+            if (linkRect.top < contentRect.top + scrollThreshold || linkRect.bottom > contentRect.bottom - scrollThreshold) {
+              // Smooth scroll but don't center - just make it visible
+              link.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
           }
         } else {
@@ -225,9 +240,10 @@ const shouldShowTOC = filteredHeadings.length > 1;
       scrollListener = null;
     }
     
-    // Update active link on scroll with debouncing
+    // Update active link on scroll with minimal debouncing
     let ticking = false;
     scrollListener = () => {
+      lastScrollTime = Date.now();
       if (!ticking) {
         requestAnimationFrame(() => {
           highlightTOC();
@@ -239,10 +255,8 @@ const shouldShowTOC = filteredHeadings.length > 1;
     
     window.addEventListener('scroll', scrollListener, { passive: true });
     
-    // Initial highlight (with delay to ensure layout is ready)
-    setTimeout(() => {
-      highlightTOC();
-    }, 100);
+    // Initial highlight (immediate)
+    highlightTOC();
     
     // Force scrollbar style refresh
     const tocNav = document.querySelector('.toc-container') as HTMLElement;
@@ -253,38 +267,15 @@ const shouldShowTOC = filteredHeadings.length > 1;
       tocNav.style.display = '';
     }
     
-    // Set up resize observer for height recalculation
-    const debouncedUpdateHeight = debounce(() => {
-      updateTOCHeight();
-      highlightTOC(); // Also update highlighting when height changes
+    // Simple resize handler for highlighting updates only
+    const debouncedUpdate = debounce(() => {
+      const timeSinceLastScroll = Date.now() - lastScrollTime;
+      if (timeSinceLastScroll > 500) {
+        highlightTOC();
+      }
     }, 150);
-    
-    window.addEventListener('resize', debouncedUpdateHeight);
-    
-    // Also update height when Local Graph is initialized (for PostLayout)
-    // This handles cases where Graph appears/disappears dynamically
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' || mutation.type === 'attributes') {
-          // Delay to let layout settle
-          setTimeout(() => {
-            updateTOCHeight();
-            highlightTOC();
-          }, 100);
-        }
-      });
-    });
-    
-    // Observe the sidebar for changes (Graph appearing/disappearing)
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-      observer.observe(sidebar, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style']
-      });
-    }
+
+    window.addEventListener('resize', debouncedUpdate);
   }
 
   // Make functions globally available
@@ -339,13 +330,18 @@ const shouldShowTOC = filteredHeadings.length > 1;
   }
   
   .toc-content {
-    /* No scrolling needed - content flows naturally */
+    /* Simple viewport-based max height */
+    max-height: 60vh;
     overflow-x: hidden;
-    overflow-y: visible;
+    overflow-y: auto; /* Allow vertical scrolling */
     word-wrap: break-word;
     overflow-wrap: break-word;
     width: 100%;
     box-sizing: border-box;
+
+    /* Custom scrollbar styling for the content container */
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-primary-300)) transparent;
   }
   
   .toc-link {
@@ -402,51 +398,45 @@ const shouldShowTOC = filteredHeadings.length > 1;
     }
   }
   
-  /* Prevent horizontal overflow and enable vertical scrolling when needed */
+  /* The toc-list no longer handles scrolling - that's now handled by toc-content */
   .toc-list {
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: visible; /* Don't scroll here */
     width: 100%;
-    padding-right: 0.5rem; /* Space for scrollbar */
+    padding-right: 0; /* No padding needed since scrolling is on parent */
     box-sizing: border-box;
-    /* max-height is dynamically set by JavaScript based on available space */
-    /* This ensures consistent bottom spacing regardless of Graph presence */
-    
-    /* Custom scrollbar styling */
-    scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-primary-300)) transparent;
   }
-  
-  /* Webkit scrollbar styling for Chrome/Safari/Edge */
-  .toc-list::-webkit-scrollbar {
+
+  /* Webkit scrollbar styling for the content container (Chrome/Safari/Edge) */
+  .toc-content::-webkit-scrollbar {
     width: 6px;
   }
-  
-  .toc-list::-webkit-scrollbar-track {
+
+  .toc-content::-webkit-scrollbar-track {
     background: transparent;
     border-radius: 3px;
   }
-  
-  .toc-list::-webkit-scrollbar-thumb {
+
+  .toc-content::-webkit-scrollbar-thumb {
     background: rgb(var(--color-primary-300));
     border-radius: 3px;
     transition: background 0.2s ease;
   }
-  
-  .toc-list::-webkit-scrollbar-thumb:hover {
+
+  .toc-content::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-primary-400));
   }
-  
-  /* Dark mode scrollbar */
-  .dark .toc-list {
+
+  /* Dark mode scrollbar for content container */
+  .dark .toc-content {
     scrollbar-color: rgb(var(--color-primary-600)) transparent;
   }
-  
-  .dark .toc-list::-webkit-scrollbar-thumb {
+
+  .dark .toc-content::-webkit-scrollbar-thumb {
     background: rgb(var(--color-primary-600));
   }
-  
-  .dark .toc-list::-webkit-scrollbar-thumb:hover {
+
+  .dark .toc-content::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-primary-500));
   }
   

@@ -142,6 +142,13 @@
       "commandId": "obsidian-git:push",
       "mode": "any",
       "sticky": "right"
+    },
+    {
+      "id": "plugin-sync;1",
+      "name": "Uninitialized",
+      "type": "existing",
+      "hidden": false,
+      "mdOnly": false
     }
   ],
   "explorerCommands": [],

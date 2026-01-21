@@ -252,5 +252,14 @@
       ],
       "key": "'"
     }
+  ],
+  "ui-tweaker:toggle-tab-bar": [
+    {
+      "modifiers": [
+        "Alt",
+        "Mod"
+      ],
+      "key": "S"
+    }
   ]
 }

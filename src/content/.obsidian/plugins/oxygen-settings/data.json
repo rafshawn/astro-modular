@@ -76,7 +76,7 @@
   "enableCustomPresets": true,
   "navIndentationGuideWidth": "0px",
   "navIndentationGuideColor": "rgba(var(--mono-rgb-100), 0.12)",
-  "animationPersonality": "default",
+  "animationPersonality": "playful",
   "animationSpeed": 0.7,
   "enableBlur": false,
   "useDefaultFolderIcon": false,
