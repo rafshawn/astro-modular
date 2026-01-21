@@ -69,6 +69,7 @@ Here's a guide for some important hotkeys set especially for this theme:
 - Open SEO audit: `CTRL + SHIFT + A`
 - Open Terminal: `CTRL + SHIFT + D`
 - Open Astro Modular Settings: `CTRL + SHIFT + ,`
+- Omnisearch: `CTRL + SHIFT + O`
 - Commit and sync git: `CTRL + SHIFT + S`
 
 If you're on Mac, `CTRL` = `CMD`.
@@ -94,6 +95,7 @@ Community plugins enabled:
 - Home Base
 - Iconic
 - Image Manager
+- Omnisearch
 - Oxygen Theme Settings
 - Property Over Filename
 - SEO
@@ -183,6 +185,10 @@ You can adjust this behavior in Property Over File Name settings.
 ### Settings Search
 
 Simply provides a global search option for all settings in Obsidian.
+
+### Omnisearch
+
+A powerful search for your entire vault or an individual note. You can search and find notes based on a note's content rather than merely just a note's title. Activate it with `CTRL + SHIFT + O` when the quick switcher (`CTRL + O`) isn't enough.
 
 ### SEO
 
