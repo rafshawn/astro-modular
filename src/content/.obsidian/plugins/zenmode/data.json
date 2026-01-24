@@ -10,5 +10,5 @@
   "topPadding": 0,
   "bottomPadding": 0,
   "focusedFileMode": true,
-  "hideStatusBar": true
+  "hideStatusBar": false
 }
