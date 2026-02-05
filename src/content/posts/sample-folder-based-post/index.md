@@ -32,6 +32,10 @@ Wikilink image embed:
 ```
 ![[forest.png]]
 ```
+
+Don't worry, the `/post-title/attachment` folder works also. 
+
+![Lush forest](attachments/lush-forest.jpg)
 ## Benefits of Folder-Based Approach
 
 - **Organization**: Keep all post assets in one place

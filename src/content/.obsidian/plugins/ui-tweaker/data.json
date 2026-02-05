@@ -109,6 +109,13 @@
       "mdOnly": false
     },
     {
+      "id": "plugin-sync;1",
+      "name": "Uninitialized",
+      "type": "existing",
+      "hidden": false,
+      "mdOnly": false
+    },
+    {
       "id": "plugin-obsidian-git-branch;1",
       "name": "master",
       "type": "existing",
@@ -143,13 +150,6 @@
       "commandId": "obsidian-git:push",
       "mode": "any",
       "sticky": "right"
-    },
-    {
-      "id": "plugin-sync;1",
-      "name": "Uninitialized",
-      "type": "existing",
-      "hidden": false,
-      "mdOnly": false
     }
   ],
   "explorerCommands": [],
